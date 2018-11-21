@@ -8,7 +8,7 @@ script:
 deploy:
     provider: pages
     skip_cleanup: true
-    github_token: $Github_token_travis
+    github_token: $TravisCI
     on:
         branch: master
     local_dir: public
