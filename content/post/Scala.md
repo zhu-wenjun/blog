@@ -1,7 +1,7 @@
 ---
 title: "Scala"
 date: 2018-11-18T22:45:00+08:00
-draft: true
+draft: false
 ---
 
 Scala是SCAlable Language（可扩展语言）的缩写，由Martin Odersky教授和他的EPFL团队于2003年创建。
