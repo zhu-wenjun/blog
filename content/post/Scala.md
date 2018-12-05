@@ -1,11 +1,13 @@
 ---
-title: "Scala"
+title: "Scala笔记"
 date: 2018-11-18T22:45:00+08:00
 draft: true
 ---
 
 Scala是SCAlable Language（可扩展语言）的缩写，由Martin Odersky教授和他的EPFL团队于2003年创建。
 Scala用来为Java虚拟机(JVM)平台上的函数式编程和面向对象编程提供一个高性能的开发环境。
+
+> 笔记参考： Scala学习手册
 
 ## 1. Scala环境搭建
 
@@ -40,10 +42,6 @@ Type in expressions for evaluation. Or try :help.
 
 scala>
 ```
-***
-
-### 1.3 Scala REPL
-#### 1.3.1 帮助
 在Scala的REPL中输入:help会显示帮助系统
 
 ```
@@ -77,7 +75,7 @@ scala>
 ```
 ***
 
-#### 1.3.2 Hello, World
+### 1.3 Hello, World
 ```
 scala> println("Hello, World")
 Hello, World
@@ -96,7 +94,7 @@ REPL先读(**R**) println("Hello, World")的输入内容
 ***
 
 
-#### 1.3.3 算数运算
+### 1.4 算数运算
 ```
 scala> 9 * 9
 res4: Int = 81
@@ -108,8 +106,15 @@ scala>
 在REPL 中输入9 * 9时， REPL显示结果为81，但这个81被赋给一个Int（整型）的变量res4,之后用println打印(res4)，可以看到res4变量的值为81。
 ***
 
+## 2. Scala 字面量、值、变量和类型
 
-#### 1.3.4 值(val)
+### 2.1 字面量(literal)
+字面量或字面数据是直接出现在源代码中的数据，如数字5、字母'A'和文本"Hello, world"
+***
+
+### 2.2 值(value)
+值是一个不可变的、有类型的存储单元。可以在定义值时为它指定数据，不过**不允许**重新赋值<br>
+
 >定义值: val \<identifier\>\[: \<type>\] = \<data\>
 
 ```
@@ -124,7 +129,7 @@ scala> x = 6
 scala>
 ```
 
-根据字面量(Literal)赋值自动推导**值**的类型，即可省略 \[: \<type>\] 
+根据字面量(literal)赋值自动推导**值**的类型，即可省略 \[: \<type>\] 
 
 ```
 scala> val a = 10
@@ -153,7 +158,8 @@ scala>
 ***
 
 
-#### 1.3.5 变量(var)
+### 2.3 变量(variable)
+变量是一个可变的、有类型的存储单元。可以在定义变量时为它指定数据，而且可以在任何时间重新赋值<br>
 
 >定义变量:var \<identifier\>\[: \<type>\] = \<data\>
 
@@ -203,14 +209,81 @@ scala>
 ```
 ***
 
-#### 1.3.6 命名
+### 2.4 类型
+Scala包括**数值类型**（比如Int和Double）和**非数值类型**(比如String),可以用来定义**值**和**变量**.<br>
+这些核心类型是所有其他类型的基石，这包括**对象**和**集合**. <br>
+**集合**本身也是**对象**，也包括可以处理其数据的**方法**和**操作符**
+
+#### 2.4.1 数值数据类型
+ 类型名|      描述    |  大小 | 最小值 | 最大值
+------ | ------------ | ----- | ------ | --------
+Byte   | 有符号整数   | 1字节 | -127   | 128
+Short  | 有符号整数   | 2字节 | -32768 | 32767
+Int    | 有符号整数   | 4字节 | -2^31  | 2^31 - 1 
+Long   | 有符号整数   | 8字节 | -2^63  | 2^63 - 1
+Float  | 有符号浮点数 | 4字节 |   n/a  | n/a
+Double | 有符号浮点数 | 8字节 |   n/a  | n/a
+Scala支持自动将低等级类型转换为高等级类型，以上数值数据类型等级从低到高为Byte ---> Double
+```
+scala> val b: Byte = 10
+b: Byte = 10
+
+scala> val f: Float = b
+f: Float = 10.0
+
+scala> val d: Double = b
+d: Double = 10.0
+
+scala>
+
+```
+以上数值数据类型从低等级到高等级为Byte ---> Double
+
+从高等级向低等级转换数据时会出现type mismatch，需要用toType方法完成类型间的转换，所有的数值类型都有toType的方法。
+toType从高等级向低等级转换时有可能会丢失数据
+```
+scala> val a1: Long = 60
+a1: Long = 60
+
+scala> val a2: Int = a1
+<console>:12: error: type mismatch;
+ found   : Long
+ required: Int
+       val a2: Int = a1
+                     ^
+
+scala> val a2: Int = a1.toInt
+a2: Int = 60
+
+scala> val a3: Long = a2
+a3: Long = 60
+
+scala> val a4: Double = a2
+a4: Double = 60.0
+```
+根据数值字面量类型来指定值或变量的类型
+
+ 字面量 |    类型   |  描述 								| 举例
+------- | --------- | ------------------------------------- |------------------------------------
+5		| Int		| 数字前后无尾缀的字面量为Int型			| scala> var a = 5<br> a: Int = 5
+0xff	| Int		| 数字前缀有0x是16进制的字面量为Int型	| scala> var b = 0xff<br> b: Int = 255
+5l		| Long 		| 数字尾缀有l的字面量为Long型			| scala> var c = 5l<br> c: Long = 5
+5d		| Double	| 小数后面无尾缀的字面量为Double型		| scala> var d = 5d<br> d: Double = 5.0
+5.0		| Double	| 小数后面无尾缀的字面量为Double型		| scala> var e = 5.0<br> e: Double = 5.0
+5.0f	| Float		| 小数后面有f的字面量为Float型			| scala> var f = 5.0f<br> f: Float = 5.0
+***
+
+#### 2.4.2 字符串
+***
+
+### 2.5 命名
 
 Scala中的名字命名可以使用字母、数字和一些特殊的操作符（operator）字符，比如 *, :或者+等。
 **注意**⚠️ ：特殊操作符不包括点号. 和中括号[] 
 Scala合法标识符命名规则:
 
-1.一个字母后面跟任意个字母或数字
-
+#### 2.5.1 a[a/1]
+一个字母后面跟任意个字母或数字
 ```
 scala> val a = 10
 a: Int = 10
@@ -230,8 +303,8 @@ ab1: Int = 14
 scala>
 ```
 
-2.一个字母后面跟任意个字母或数字, 然后是一个下划线(_)，后面是任意个字母和数字或操作符字符
-
+#### 2.5.2 a[a/1]_[a/1/*]
+一个字母后面跟任意个字母或数字, 然后是一个下划线(_)，后面是任意个字母、数字或操作符字符
 ```
 scala> val a_b = 20
 a_b: Int = 20
@@ -249,7 +322,9 @@ scala> val a* = 23
 
 scala>
 ```
-3.一个或多个操作符字符
+
+#### 2.5.3 \*\[*]
+一个或多个操作符字符
 ```
 scala> val * = 30
 *: Int = 30
@@ -266,10 +341,9 @@ scala> val *:+ = 33
 scala>
 ```
 
-4.一个或多个除反引号\`\`之外的任意字符，所有这些字符需要包围在一对反引号中,
-这些字符可以是Scala的保留字，比如true, while, = 和var
-
-a*的命名违反规则2， 使用反引号\`\`包围a*使其命名合法化
+#### 2.5.4 \`a*\`
+一个或多个除反引号\`\`之外的任意字符，所有这些字符需要包围在一对反引号中, 这些字符可以是Scala的保留字，比如true, while, = 和var
+a*的命名违反规则2.5.2， 使用反引号\`\`包围a*使其命名合法化
 ```
 scala> val a* = 40
 <console>:1: error: illegal start of simple pattern
@@ -307,7 +381,7 @@ a..: Int = 42
 scala>
 ```
 
-Scala命名规则里面不包中括号[].,  使用反引号\`\` 使命名合法化
+Scala命名规则里面不包中括号[],  使用反引号\`\` 使命名合法化
 ```
 scala> val [] = 43
 <console>:1: error: illegal start of simple pattern
