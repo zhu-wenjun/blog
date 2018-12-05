@@ -1,7 +1,7 @@
 ---
 title: "在Docker中搭建PIVX Masternode [Draft]"
 date: 2018-12-04T18:17:50+08:00
-draft: true
+draft: false
 ---
 
 
