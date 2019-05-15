@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Even - A super concise theme for Hugo</title>
+    <link>https://zhu-wenjun.github.io/</link>
+    <description>Recent content on Even - A super concise theme for Hugo</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Tue, 04 Dec 2018 18:17:50 +0800</lastBuildDate>
+    
+	<atom:link href="https://zhu-wenjun.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Setup pivx masternode  [Draft]</title>
+      <link>https://zhu-wenjun.github.io/post/masternode-setup-pivx/</link>
+      <pubDate>Tue, 04 Dec 2018 18:17:50 +0800</pubDate>
+      
+      <guid>https://zhu-wenjun.github.io/post/masternode-setup-pivx/</guid>
+      <description>相关链接 https://pivx.org/knowledge-base/masternode-setup-guide/ https://masternode-setup.com/pivx/ https://masternode-setup.com/pivx/hot-cold-vps.html 流程介绍 1. 在Mac上安装PIVX钱包，这个钱包称之为Control wallet或者Hot wallet 2. 在Ubuntu VPS上搭建Mast</description>
+    </item>
+    
+  </channel>
+</rss>
