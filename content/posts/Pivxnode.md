@@ -1,7 +1,7 @@
 ---
 title: "PIVX masternode"
 date: 2019-01-17T12:45:33+08:00
-draft: true
+draft: false
 ---
 
 1. pivx的masternode官方称作masternode<br>

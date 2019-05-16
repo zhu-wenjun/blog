@@ -1,7 +1,12 @@
 baseURL = "https://zhu-wenjun.github.io"
 languageCode = "en-us"
+<<<<<<< HEAD
 title = "LeaveIt"
 theme = "LeaveIt"
+=======
+title = "无人之境"
+theme = "无人之境"
+>>>>>>> 801209bdbf97f67a83a3a7e7f262450f72395ddc
 
 paginate = 12
 enableEmoji = true
@@ -64,6 +69,7 @@ avatar = "/me/zebra.jpeg"           # Author's avatar
 	license= '本文采用<a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/" target="_blank">知识共享署名-非商业性使用 4.0 国际许可协议</a>进行许可'
 
 [params.social]
+<<<<<<< HEAD
 #    GitHub = "xxoo"
 #    Twitter = "xxoo"
 #    Email   = "xxoo"
@@ -88,4 +94,30 @@ avatar = "/me/zebra.jpeg"           # Author's avatar
 #    clientId = "xxx"           # Your client ID
 #    clientSecret = "x"       # Your client secret
 #    countSign = "条评论"
+=======
+    GitHub = "xxoo"
+    Twitter = "xxoo"
+    Email   = "xxoo"
+    Instagram = "xxoo"
+#Wechat = "/images/me/wechat.png"  # Wechat QRcode image
+	Wechat = "/me/wechat.png"  # Wechat QRcode image
+    Facebook = "xxoo"
+    Telegram = "xxoo"
+    Dribbble = "xxoo"
+    Medium = "xxoo"
+
+# disqus 评论配置
+[params.disqus]
+    name = "xxx"      # disqus_shortname
+    lazy = true         # lazy to load disqus
+
+# Gitalk 评论配置（gitalk 请参考：https://github.com/gitalk/gitalk）
+[params.gitalk]
+    owner = "xxx"              # Your GitHub ID
+    admin = "xxx"      # GitHub repository owner and collaborators
+    repo = "xxxx"               # The repo to store comments
+    clientId = "xxx"           # Your client ID
+    clientSecret = "x"       # Your client secret
+    countSign = "条评论"
+>>>>>>> 801209bdbf97f67a83a3a7e7f262450f72395ddc
 
