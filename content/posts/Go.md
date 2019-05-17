@@ -3908,7 +3908,7 @@ main函数从block状态恢复到running状态，然后再从running状态退出
 
 
 
-# 15. 总结
+# 10. 总结
 
 ## 可以比较的类型
 以下5种类型在go语言中可以比较  //adm
@@ -3958,7 +3958,7 @@ func main() {
 addressable & unaddressable
 [参考链接](https://cloud.tencent.com/developer/article/1187626)
 
-## 参考资料：
+## 参考资料
 https://go101.org <br>
 https://tour.golang.org/methods/16 <br>
 https://golang.org/ref/spec#Method_sets <br>
