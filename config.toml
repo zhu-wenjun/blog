@@ -42,8 +42,7 @@ preserveTaxonomyNames = true
 [params]
     since = 2011
     author = "Wenjun.Zhu"                           # Author's name
-#avatar = "/me/zebra.jpeg"           # Author's avatar
-avatar = "/shallwetalk/5.JPG"           # Author's avatar
+avatar = "/me/zebra.jpeg"           # Author's avatar
 #avatar = "/me/avatar.jpeg"           # Author's avatar
     subtitle = "下一个十年"         # Subtitle
     cdn_url = ""           # Base CDN URL
