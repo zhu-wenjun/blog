@@ -4,6 +4,8 @@ date: 2018-11-28T22:57:01+08:00
 draft: false
 ---
 
+**Golang 信手拈来这个坑是在2018年挖的，但所有的内容都是在2019年填的👻👻👻**
+
 # Golang基本特性
 
 1. Golang是静态语言，需要先编译再执行，静态语言的好处是具有类型安全特性
@@ -1305,453 +1307,7 @@ delete函数用于删除map中的键值对，它没有返回值，即使要删�
 
 [**🍣 🥨 🍒 🍣 🥨 🍒 🍣 🥨 🍒 🍣 🥨 P L A Y A R O U N D 🍒 🍣 🥨 🍒 🍣 🥨 🍒 🍣 🥨 🍒 🍣**](https://play.golang.org/p/_zbYO7zEAw5)
 
-# 5.通道
-
-通过共享内存通信和通过通信来共享内存是2种不同的编程方式。通过共享内存通信需要使用互斥锁之类的同步方式来防止数据竞争，
-而通过通信来共享内存则可以通过通道channel的方式来实现，即通过channel(通道)来实现goroutine(并发)之间的共享内存。
-
-## 5.1 什么是通道
-通道(channel)的关键字为chan，可以把通道看作FIFO(first in first out)一样的数据队列。同slice，map一样，
-chan是Go语言的内置类型，使用时不需要导入包，但是像其他的同步方式（比如WaitGroup）则需要导入sync或sync/atomic包。
-chan有不同的类型，chan传输的数据类型要和chan的类型一致，假设T是chan的类型：<br><br>
-
-> 
-`chan T` &nbsp;&nbsp;表示一个双向通道，即可以往通道发送T类型的数据，也可以从通道读取T类型的数据。<br>
-`chan<- T`表示一个只能往通道发送T类型数据的单向通道。从此通道里读取数据会引起编译错误❌<br>
-`<-chan T`表示一个只能从通道读取T类型数据的单向通道。往此通道里发送数据会引起编译错误❌<br>
-
-`chan T`类型的通道值可以隐式的转换为`chan<- T`或`<-chan T`类型的值。<br>
-`chan<- T`和`<-chan T`类型的值不能转换为`chan T`类型的值;<br>
-`chan<- T`和`<-chan T`类型的值也不能互相转换。<br>
-
-```go
-package main
-
-import "fmt"
-
-func main() {
-
-	//声明一个数据类型为int的双向通道变量bidirCh
-	var bidirCh chan int // or bidirCh := chan int(nil)
-
-	//声明一个数据类型为int的send only的单向通道变量sendOnlyCh
-	var sendOnlyCh chan<- int
-
-	//声明一个数据类型为int的receive only的单向通道变量receiveOnlyCh
-	var receiveOnlyCh <-chan int
-
-	fmt.Printf("bidirCh is nil? %t\n", bidirCh == nil)
-	fmt.Printf("bidirCh type is: %#v\n\n", bidirCh)
-
-	fmt.Printf("sendOnlyCh is nil? %t\n", sendOnlyCh == nil)
-	fmt.Printf("sendOnlyCh type is: %#v\n\n", sendOnlyCh)
-
-	fmt.Printf("receiveOnlyCh is nil? %t\n", receiveOnlyCh == nil)
-	fmt.Printf("receiveOnlyCh type is: %#v\n", receiveOnlyCh)
-
-	//chan int 型的双向通道的变量可以隐式的转换为chan<- int或<-chan int型的单向通道的变量
-	sendOnlyCh = bidirCh    //也可显式地转换:  sendOnlyCh := (chan<- int)(bidirCh)
-	receiveOnlyCh = bidirCh //也可显式地转换:  receiveOnlyCh := (<-chan int)(bidirCh)
-}
-```
-
-`bidirCh is nil? true`<br>
-`bidirCh type is: (chan int)(nil)`<br>
-
-`sendOnlyCh is nil? true`<br>
-`sendOnlyCh type is: (chan<- int)(nil)`<br>
-
-`receiveOnlyCh is nil? true`<br>
-`receiveOnlyCh type is: (<-chan int)(nil)`<br>
-
-[**🍏〰️🍎〰️🍐〰️🍊〰️🍋〰️🍌〰️🍉 P L A Y A R O U N D 〰️🍇〰️🍓〰️🍈〰️🍒〰️🍑〰️🥭 〰️🥝**]()
-
-## 5.2 创建通道
-
-5.1的例子中我们创建的3个通道bidirCh, sendOnlyCh和receiveOnlyCh的值均为nil，即系统为这3个声明的变量分配了地址，
-但变量内部的成员值还均为0值。我们可以用make()函数为这些通道分配缓存大小。<br>
-
-make(chan int, 10) //创建一个容量为10类型为int的通道<br>
-make(chan int, 0)  //创建一个容量为0类型为int的通道<br>
-
-make函数的第二个参数是可选的，默认是0，所以make(chan int, 0)也可以写成make(chan int)。容量为0的通道称为无缓冲的通道，否则称之为有缓冲的通道<br>
-
-```go
-package main
-
-import "fmt"
-
-func main() {
-
-	//声明一个数据类型为int的双向通道变量bidirCh
-	var bidirCh chan int // or bidirCh := chan int(nil)
-
-	//声明一个数据类型为int的send only的单向通道变量sendOnlyCh
-	var sendOnlyCh chan<- int
-
-	//声明一个数据类型为int的receive only的单向通道变量receiveOnlyCh
-	var receiveOnlyCh <-chan int
-
-	//将bidircCh分配成一个无缓冲的双向通道
-	bidirCh = make(chan int, 0) //或者bidirCh = make(chan int)
-
-	//将sendOnlyCh分配成一个有20个整数缓冲的send only的通道
-	sendOnlyCh = make(chan<- int, 20)
-
-	//将receiveOnlyCh分配成一个有30个整数缓冲的receive only的通道
-	receiveOnlyCh = make(<-chan int, 30)
-
-	fmt.Printf("bidirCh is nil? %t\n", bidirCh == nil)
-	fmt.Printf("sendOnlyCh is nil? %t\n", sendOnlyCh == nil)
-	fmt.Printf("receiveOnlyCh is nil? %t\n\n", receiveOnlyCh == nil)
-
-	fmt.Printf("bidirCh len %d cap:%d\n", len(bidirCh), cap(bidirCh))
-	fmt.Printf("sendOnlyCh len %d cap:%d\n", len(sendOnlyCh), cap(sendOnlyCh))
-	fmt.Printf("receiveOnlyCh len %d cap:%d\n\n", len(receiveOnlyCh), cap(receiveOnlyCh))
-
-	//chan int 型的双向通道的变量可以隐式的转换为chan<- int或<-chan int型的单向通道的变量
-	sendOnlyCh = bidirCh    //也可显式地转换:  sendOnlyCh := (chan<- int)(bidirCh)
-	receiveOnlyCh = bidirCh //也可显式地转换:  receiveOnlyCh := (chan<- int)(bidirCh)
-
-	//注意: 这时的sendOnlyCh和receiveOnlyCh均是由bidirCh转换而来，它们的容量cap已变成bidirCh的容量。
-	fmt.Printf("sendOnlyCh len %d cap:%d\n", len(sendOnlyCh), cap(sendOnlyCh))
-	fmt.Printf("receiveOnlyCh len %d cap:%d\n", len(receiveOnlyCh), cap(receiveOnlyCh))
-}
-```
-
-`bidirCh is nil? false`<br>
-`sendOnlyCh is nil? false`<br>
-`receiveOnlyCh is nil? false`<br>
-
-`bidirCh len 0 cap:0`<br>
-`sendOnlyCh len 0 cap:20`<br>
-`receiveOnlyCh len 0 cap:30`<br>
-
-`sendOnlyCh len 0 cap:0`<br>
-`receiveOnlyCh len 0 cap:0`<br>
-
-[**🍏〰️🍎〰️🍐〰️🍊〰️🍋〰️🍌〰️🍉 P L A Y A R O U N D 〰️🍇〰️🍓〰️🍈〰️🍒〰️🍑〰️🥭 〰️🥝**]()
-
-## 5.3 发送/接收数据
-
-**对通道的标识符<-的说明:<br>**
-1. 把<-放在chan的左边或右边表示通道类型是发送还是接收，比如：<br>
-`var sch chan<- int`：<-指向通道，代表sch是一个send only通道类型的变量<br>
-`var rch <-chan int`:&nbsp;  <-源自通道，代表rch是一个receive only通道类型的变量<br>
-2. 把<-放在通道变量的左右表示对通道进行发送或接收，比如：<br>
-`sch <- 5`: <-指向sch，表示将数组5发送到sch通道<br>
-`i <- sch`: <-源自sch，表示从sch通道里接收一个数字到变量i<br>
-
-下面的程序演示了从一个无缓冲的bidirCh通道发送并接收数据的过程，sender用来向bidirCh发送数据，
-receiver用来从bidirCh接收数据。由于bidirCh是无缓冲的通道，sender每发完一个数据后都会block
-在bidirCh端等待数据被receiver接收，receiver接收完数据后也会block在bidirCh端等待sender再次
-发送数据，依次循环，直到sender和receiver把切片s消耗完为止。<br>
-程序的第35行和38行分别用关键字go调用了sender和receiver的函数，这相当于在程序里起了一个“线程”，
-这里我们叫goroutine，main函数也是一个goroutine，我们称之为main goroutine。
-
-```go
-package main
-
-import (
-	"fmt"
-	"time"
-)
-
-func sender(ch chan<- int, s []int) {
-	for _, v := range s {
-		//fmt.Println("\nsend block")
-		ch <- v
-		fmt.Printf("send %d\n", v)
-	}
-}
-
-func receiver(ch <-chan int) {
-	for {
-		//fmt.Println("\nrecv block")
-		v := <-ch
-		fmt.Printf("recv %d\n", v)
-	}
-}
-
-func main() {
-
-	//声明一个数据类型为int的双向通道变量bidirCh
-	var bidirCh chan int // or bidirCh := chan int(nil)
-
-	//为bidircCh分配一个无缓冲的双向通道
-	bidirCh = make(chan int, 0) //或者bidirCh = make(chan int)
-
-	s := []int{5, 4, 3, 2, 1, 0}
-
-	//启动sender的goroutine
-	go sender(bidirCh, s)
-
-	//启动receiver的goroutine
-	go receiver(bidirCh)
-
-	//让main goroutine 延迟5秒退出，以便等待sender和receiver的goroutine完成。
-	time.Sleep(time.Second * 5)
-}
-```
-`recv 5`<br>
-`send 5`<br>
-`send 4`<br>
-`recv 4`<br>
-`recv 3`<br>
-`send 3`<br>
-`send 2`<br>
-`recv 2`<br>
-`recv 1`<br>
-`send 1`<br>
-`send 0`<br>
-`recv 0`<br>
-
-send和recv对数字的发送与接收都是成对出现的，说明无缓冲的通道bidirCh具有同步的效果，
-在Go语言中无缓冲的通道也称作**同步通道**。<br>
-send和recv在处理不同的数字时它们出现的先后顺序不同，比如数字1，3，5是send在recv前，
-数字2，4是recv在send前，对于这种x事件和y事件发生顺序不固定的情况，我们就叫做并发。
-
-在打印中可以看到一些奇怪的现象，对于数字1，3，5的操作均是send在recv前，但是2和4的recv在send前。
-以recv2在send2之前为例，这并不是说sender还未发送数字2时receiver就已经接收到了数字2，而是因为在
-sender发送完数字1之后`ch <- v`会block住sender的goroutine，继而sender的goroutine从运行状态进入休眠状态，
-然后receiver的goroutine被唤醒并接收sender发送到通道的数字1，之后receiver的`v := <-ch`会block住receiver
-的goroutine，这个操作发生在sender发送2之前，在sender发送数字2之前receiver就已经block在通道的另一端准备好了接收的操作，
-
-[**🍏〰️🍎〰️🍐〰️🍊〰️🍋〰️🍌〰️🍉 P L A Y A R O U N D 〰️🍇〰️🍓〰️🍈〰️🍒〰️🍑〰️🥭 〰️🥝**]()
-
-## 5.4 关闭通道 
-
-假设通道变量为ch,关闭通道的操作为： close(ch), 使用close()函数需要注意以下几点：<br>
-
-1. close一个值为nil的通道会导致panic。<br>
-2. close一个已经close()的通道会导致panic异常。<br>
-3. 在向一个已经close()的通道发送数据时会导致panic。<br>
-4. close()不能关闭receive-only类型的通道。<br>
-5. 从一个已经close()的通道接收数据时会产生无尽的0值。<br>
-
-下例程序的注释标出了以上item1 ～ item4的4种错误操作，item5的无尽0值可以看下例程序的打印输出。<br>
-
-```go
-package main
-
-import (
-	"fmt"
-	"time"
-)
-
-func sender(ch chan<- int, s []int) {
-
-	for _, v := range s {
-		//fmt.Println("\nsend block")
-		ch <- v
-		fmt.Printf("send %d\n", v)
-	}
-	close(ch)
-	//close(ch) //item2 ❌ panic: close of closed channel
-	//ch <- 99  //item3 ❌ panic: send on closed channel
-}
-
-func receiver(ch <-chan int) {
-	for {
-		//fmt.Println("\nrecv block")
-		//close(ch) //item4 ❌ invalid operation: close(ch) (cannot close receive-only channel)
-		v := <-ch
-		fmt.Printf("recv %d\n", v)
-	}
-}
-
-func main() {
-
-	//声明一个通道数据类型为int的双向通道bidirCh
-	var bidirCh chan int // or bidirCh := chan int(nil)
-
-	//close(bidirCh) //item1 ❌ panic: close of nil channel
-	//将bidircCh分配成一个无缓冲的双向通道
-	bidirCh = make(chan int, 0) //或者bidirCh = make(chan int)
-
-	s := []int{5, 4, 3, 2, 1, 0}
-
-	//启动sender的goroutine
-	go sender(bidirCh, s)
-
-	//启动receiver的goroutine
-	go receiver(bidirCh)
-
-	//让main goroutine 延迟5秒退出，以便等待sender和receiver的goroutine完成。
-	time.Sleep(time.Second * 5)
-}
-```
-
-`recv 5`<br>
-`send 5`<br>
-`send 4`<br>
-`recv 4`<br>
-`recv 3`<br>
-`send 3`<br>
-`send 2`<br>
-`recv 2`<br>
-`recv 1`<br>
-`send 1`<br>
-`send 0`<br>
-`recv 0`<br>
-`recv 0`<br>
-`recv 0`<br>
-`recv 0`<br>
-`recv 0`<br>
-`recv 0`<br>
-`... `<br>
-
-上面的打印出现了很多`recv 0`的打印，我们无法判断究竟哪一个是sender发送的那些是通道close()之后读出来的，
-下一节的例子会解决这个问题。
-
-[**🍏〰️🍎〰️🍐〰️🍊〰️🍋〰️🍌〰️🍉 P L A Y A R O U N D 〰️🍇〰️🍓〰️🍈〰️🍒〰️🍑〰️🥭 〰️🥝**](https://play.golang.org/p/kkGOj6tG-sJ)
-
-Go语言中的通道在使用完毕后不必非得使用close()函数来关闭通道，GC会自动检测并回收不再被引用的通道，
-那close()函数的作用是什么呢: close()可以通知通道的接收者在接收到某一个数据后后续再接收的数据将不再有效。<br>
-事实上从通道接收数据还有一个可选的bool变量，用于判断这个数据是否是从从通道里读取出来的，这样就能解决上面遇到的
-不确定哪个`recv 0` 是sender发送的问题。
-
-下面的例子里的接收者将判断从当前通道里读取数据如果不是true的话将终止接收通道的数据。
-
-```go
-package main
-
-import (
-	"fmt"
-	"time"
-)
-
-func sender(ch chan<- int, s []int) {
-
-	for _, v := range s {
-		//fmt.Println("\nsend block")
-		ch <- v
-		fmt.Printf("send %d\n", v)
-	}
-	close(ch)
-	//close(ch) //item2 ❌ panic: close of closed channel
-	//ch <- 99  //item3 ❌ panic: send on closed channel
-}
-
-func receiver(ch <-chan int) {
-	for {
-		//fmt.Println("\nrecv block")
-		//close(ch) //item4 ❌ invalid operation: close(ch) (cannot close receive-only channel)
-		v, ok := <-ch
-		if ok == true {
-			fmt.Printf("recv %d %t\n", v, ok)
-		} else {
-			break
-		}
-	}
-}
-
-func main() {
-
-	//声明一个通道数据类型为int的双向通道bidirCh
-	var bidirCh chan int // or bidirCh := chan int(nil)
-
-	//close(bidirCh) //item1 ❌ panic: close of nil channel
-	//将bidircCh分配成一个无缓冲的双向通道
-	bidirCh = make(chan int, 0) //或者bidirCh = make(chan int)
-
-	s := []int{5, 4, 3, 2, 1, 0}
-
-	//启动sender的goroutine
-	go sender(bidirCh, s)
-
-	//启动receiver的goroutine
-	go receiver(bidirCh)
-
-	//让main goroutine 延迟5秒退出，以便等待sender和receiver的goroutine完成。
-	time.Sleep(time.Second * 5)
-}
-```
-
-`recv 5 true`<br>
-`send 5`<br>
-`send 4`<br>
-`recv 4 true`<br>
-`recv 3 true`<br>
-`send 3`<br>
-`send 2`<br>
-`recv 2 true`<br>
-`recv 1 true`<br>
-`send 1`<br>
-`send 0`<br>
-`recv 0 true`<br>
-
-使用close()函数并配合接收者对接收数据的true/false的判断，可以有效控制通过通道要发送或接收的数据。
-
-对于在本节刚开始提到的以下3种对通道的操作会导致panic的情况，都可以先从通道读取出一个数据并判断其
-是否为true的方式再执行以下3种close通道的方式，以避免产生panic:<br>
-1. close一个值为nil的通道会导致panic。<br>
-2. close一个已经close()的通道会导致panic异常。<br>
-3. 在向一个已经close()的通道发送数据时会导致panic。<br>
-
-[**🍏〰️🍎〰️🍐〰️🍊〰️🍋〰️🍌〰️🍉 P L A Y A R O U N D 〰️🍇〰️🍓〰️🍈〰️🍒〰️🍑〰️🥭 〰️🥝**](https://play.golang.org/p/kkGOj6tG-sJ)
-
-## 5.3 通道相关的操作
-
-通道的操作通常涉及：1. 创建，2. 写入数据，3. 获得通道长度和容量，4. 读取数据，5. 关闭通道。<br>
-
-```go
-package main
-
-import "fmt"
-
-func main() {
-
-	s := make([]int, 10)
-
-	//1. 创建： 创建一个缓冲为5的通道ch
-	ch := make(chan int, 5)
-
-	fmt.Printf("len(ch):%2d  cap(ch):%2d\n", len(ch), cap(ch))//len(ch): 0  cap(ch): 5
-
-	//2. 写入： 往通道ch里发送数据
-	ch <- 1
-	ch <- 2
-	ch <- 3
-	ch <- 4
-	ch <- 5
-
-	//3.
-	// 长度
-	// 容量
-	fmt.Printf("len(ch):%2d  cap(ch):%2d\n", len(ch), cap(ch))//len(ch): 0  cap(ch): 5
-
-	//❌ ch <- 6 //通道已满(len(ch) == len(cap))，再像通道写入数据会产生错误：fatal error: all goroutines are asleep - deadlock!
-
-	//4. 读取
-	s[0] = <-ch
-	s[1] = <-ch
-	s[2] = <-ch
-	s[3] = <-ch
-	s[4] = <-ch
-
-	fmt.Printf("len(ch):%2d  cap(ch):%2d\n", len(ch), cap(ch))//len(ch): 0  cap(ch): 5
-
-	//❌ s[5] = <-ch //通道已空(len(ch) == 0)，再从通道读取数据会产生错误：fatal error: all goroutines are asleep - deadlock!
-
-	fmt.Println(s)
-
-	//5. 关闭
-	close(ch)
-}
-```
-
-`len(ch): 0  cap(ch): 5`<br>
-`len(ch): 5  cap(ch): 5`<br>
-`len(ch): 0  cap(ch): 5`<br>
-`[1 2 3 4 5 0 0 0 0 0]`<br>
-
-[**🍏〰️🍎〰️🍐〰️🍊〰️🍋〰️🍌〰️🍉 P L A Y A R O U N D 〰️🍇〰️🍓〰️🍈〰️🍒〰️🍑〰️🥭 〰️🥝**](https://play.golang.org/p/HCrPO1n5mlc)
-
-
-## 5.4 通道会崩溃的几种情况
-
-# 6. 函数
+# 5. 函数
 go语言中函数的声明格式如下:<br>
 包含一个函数名name，一个参数列表parameter-list和一个返回结果列表result-list和一个函数体body。
 
@@ -1759,7 +1315,7 @@ go语言中函数的声明格式如下:<br>
 	&nbsp;&nbsp;&nbsp;&nbsp;body<br>
 }
 
-## 6.1 函数签名
+## 5.1 函数签名
 
 如果2个函数的参数类型相同，返回值类型也相同，则这2个函数具有相同的类型，函数的类型就是函数的签名。  //adm
 
@@ -1809,7 +1365,7 @@ package math
 func Sin(x float64) float64 // implemented in assembly language.
 ```
 
-## 6.2 递归调用
+## 5.2 递归调用
 
 递归函数可以自己调用自己，但要设置返回条件，避免递归无限调用。  //adm
 
@@ -1859,7 +1415,7 @@ recursion函数对自己再次调用时，每个recursion函数中的slice参数
 
 [**🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 P L A Y A R O U N D 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗**](-)
 
-## 6.3 函数类型
+## 5.3 函数类型
 
 函数的签名也是一种类型，比如下面main函数中的函数变量f，f的函数类型和add、sub的签名一致，所以add和sub函数均可赋给函数变量f。  //adm
 需要注意的是函数和slice、map一样，均属于不可比较的类型，它们的变量只能与nil比较，这些不可比较的类型变量不能用作map的key。<br>
@@ -1957,7 +1513,7 @@ func main() {
 
 [**🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 P L A Y A R O U N D 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗**](-)
 
-## 6.4 匿名函数
+## 5.4 匿名函数
 
 匿名函数，也叫函数字面量，是一个没有函数名的函数  //adm
 
@@ -2091,7 +1647,7 @@ func main() {
 
 [**🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 P L A Y A R O U N D 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗**](-)
 
-## 6.5 变参函数
+## 5.5 变参函数
 
 在函数参数列表的最后一个类型前加上...，表示这个函数可以接收任意个数量的该类型的参数。  //adm
 
@@ -2133,7 +1689,7 @@ func main() {
 
 add1函数的参数为可变参数，add2函数的参数是一个切片，前2行打印的是函数的类型，可以看到`func(...int)`和`func([]int)`是2个不同的类型。<br><br>
 接下来的3行打印均相同，均为`add1: i type: []int, sum: 45`:<br>
-第1行和第2行的打印是main函数向add1分别传入了一些参数(1到9)和一个切片(内容为1到9)，但在add1中打印参数i的类型时，2次均是[int]，这可以证实我们代码注释里说的"1. main函数隐式的把add的参数放到一个切片里，然后再传给add函数。"<br>
+第1行和第2行的打印是main函数向add1分别传入了一些参数(1到9)和一个切片(内容为1到9)，但在add1中打印参数i的类型时，2次均是[]int，这可以证实我们代码注释里说的"1. main函数隐式的把add的参数放到一个切片里，然后再传给add函数。"<br>
 第3行参数是main函数直接调用了一个参数为切片的add2，并向add2传递了一个切片s，这行的打印和上2行一致，作为对比用。<br>
 
 [**🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 P L A Y A R O U N D 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗**](-)
@@ -2160,7 +1716,7 @@ interface{}表示能接收任意类型的参数，如果用它做可变参数的
 
 [**🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 P L A Y A R O U N D 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗**](-)
 
-## 6.6 延迟调用
+## 5.6 延迟调用
 
 当你在编写一个读写文件的程序，为了保证文件正确读取，可能要判断多次是否已读取到想要的大小或是否已到达EOF，
 然后在不同的判断位置加入close文件的操作并返回，go中有个defer关键字，defer 后面跟一个函数名，用于在当前函数执行完时，
@@ -2295,7 +1851,7 @@ func main() {
 }
 ```
 
-## 6.7 错误处理
+## 5.7 错误处理
 
 error是接口类型，error为nil意味着函数运行成功，non-nil表示失败。
 对于non-nil的error类型,我们可以通过调用error的Error函数或者输出函数获得字符串类型的错误信息。
@@ -2339,7 +1895,7 @@ os.Exit(1)
  log.Fatalf("Site is down: %v\n", err)
 ```
 
-## 6.8 崩溃
+## 5.8 崩溃
 
 Go程序在运行可能会遇到数组访问越界、空指针引用等，这些运行错误会引起panic异常。
 panic异常发生时，当前goroutine会中断执行，然后调用当前goroutine中的defer函数，最后再释放当前goroutine的堆栈。
@@ -2474,7 +2030,7 @@ func f(x int) {
 
 [**🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 P L A Y A R O U N D 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗 🌽 🥬  🥗**](-)
 
-## 6.9 恢复
+## 5.9 恢复
 
 Go语言中panic和recover的函数原型如下。recover函数用于从panic异常中返回，recover函数的返回值就是panic函数的参数。
 
@@ -2508,16 +2064,16 @@ func f(x int) {
 `main is end`<br>
 
 recover函数用于从panic异常中恢复，当f(0)发生异常时，系统先是调用f(0)的defer函数使用recover函数查找错误原因，然后从panic中恢复，可以看到f(0)异常发生时并未中断当前goroutine的继续运行，
-`main is end`仍能继续打印。可以与6.8节中的<a href="#除数为0引起的panic">`除数为0引起的panic`</a>进行对比。
+`main is end`仍能继续打印。可以与5.8节中的<a href="#除数为0引起的panic">`除数为0引起的panic`</a>进行对比。
 
-# 7. 方法
+# 6. 方法
 T是定义的类型(也叫命名类型)，在函数声明的函数名前面加一个类型T，那么这个函数就叫做这个类型的方法，这个类型的变量都能调用（接收）这个方法，T不能为指针或者interface类型:<br>
 
 > func (t T) name(parameter-list) (result-list) {<br>
 	&nbsp;&nbsp;&nbsp;&nbsp;body<br>
 }
 
-## 7.1 方法声明
+## 6.1 方法声明
 
 方法声明的举例如下  //adm
 
@@ -2615,7 +2171,7 @@ func main() {
 
 [**🌰 🍯 🥩 🌰 🍯 🥩 🌰 🍯 🥩 🌰 🍯  P L A Y A R O U N D 🥩 🌰 🍯 🥩 🌰 🍯 🥩 🌰 🍯 🥩 🌰**](-)
 
-## 7.2 方法接收者为指针
+## 6.2 方法接收者为指针
 
 方法的接收者只有2种类型，T和*T，T或*T类型的变量均可调用接收者为T和*T的方法  //adm
 
@@ -2923,7 +2479,7 @@ set(2, 200)尝试向一个nil map写值，这时map还没有为哈希表分配�
 [**🌰 🍯 🥩 🌰 🍯 🥩 🌰 🍯 🥩 🌰 🍯  P L A Y A R O U N D 🥩 🌰 🍯 🥩 🌰 🍯 🥩 🌰 🍯 🥩 🌰**](https://play.golang.org/p/D2g8d_1sglc)
 
 
-## 7.3 结构体引用成员类型的方法
+## 6.3 结构体引用成员类型的方法
 
 如果一个类型被一个结构体类型包含，则结构体可以直接引用这个类型的成员，结构体也可以直接引用这个类型所拥有的方法  //adm
 
@@ -2994,7 +2550,7 @@ b.leftwing这种写法在编译时编译器会生成而外的代码来展开并�
 
 [**🌰 🍯 🥩 🌰 🍯 🥩 🌰 🍯 🥩 🌰 🍯  P L A Y A R O U N D 🥩 🌰 🍯 🥩 🌰 🍯 🥩 🌰 🍯 🥩 🌰**](https://play.golang.org/p/D2g8d_1sglc)
 
-## 7.4 方法指针 
+## 6.4 方法指针 
 
 方法的指针分为2种，变量方法的指针和类型方法的指针  //adm
 
@@ -3088,9 +2644,9 @@ func main() {
 [**🌰 🍯 🥩 🌰 🍯 🥩 🌰 🍯 🥩 🌰 🍯  P L A Y A R O U N D 🥩 🌰 🍯 🥩 🌰 🍯 🥩 🌰 🍯 🥩 🌰**](https://play.golang.org/p/D2g8d_1sglc)
 
 
-# 8. 接口
+# 7. 接口
 
-## 8.1 接口类型
+## 7.1 接口类型
 
 接口是一种定义了一组方法的类型，接口类型只定义这组方法，方法由另一种类型来实现，最终接口类型的变量可以指向实现这组方法的类型的变量。接口类型写作:interface  //adm
 
@@ -3177,7 +2733,7 @@ func main() {
 
 [**⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  P L A Y A R O U N D 📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️**](https://play.golang.org/p/HD7BoI2rUye)
 
-## 8.2 空接口类型
+## 7.2 空接口类型
 
 如果一个接口类型没有定义任何方法，那么它就是空接口类型(blank interface type)。空接口类型写作interface{}  //adm
 
@@ -3245,7 +2801,7 @@ func main() {
 
 [**⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  P L A Y A R O U N D 📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️**](https://play.golang.org/p/ETmmBwnF_HW)
 
-## 8.3 给接口变量赋值
+## 7.3 给接口变量赋值
 当把另一种类型的变量赋给接口类型的变量时，需要遵循一种规则：另一种类型的方法定义一定要包含接口类型的方法定义。比如接口类型定义了3个方法，<br>
 要把另一种类型的变量赋给接口类型的变量时，另一种类型的方法定义可以有10个，但这10个方法一定要包含要被赋值的接口类型的方法定义，<br>
 即赋值类型变量的方法与被赋值接口类型的变量的方法是大于等于的关系。<br>
@@ -3363,7 +2919,7 @@ func main() {
 [**⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  P L A Y A R O U N D 📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️**](https://play.golang.org/p/D2g8d_1sglc)
 
 
-## 8.4 类型断言
+## 7.4 类型断言
 
 类型断言(type assertion)就是对接口类型的变量进行类型转换，并检查转换结果的意思，这种转换结果的检查发生在程序运行时。<br>
 比如要检查某接口类型的变量i要转换成类型T，写作i.(T)。<br>
@@ -3532,11 +3088,11 @@ func main() {
 
 [**⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  P L A Y A R O U N D 📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️**](https://play.golang.org/p/t5dUd4e8aEx)
 
-## 8.5 type-switch
+## 7.5 type-switch
 type-switch语句是类型断言的增强与补充，type-switch与switch-case语句有些相似，type-switch的语句结构如下：
 
 ```go
-switch aSimpleStatement; v := i.(type) {
+switch SimpleStmt; v := i.(type) {
 case TypeA:
 	...
 case TypeB, TypeC:
@@ -3548,7 +3104,7 @@ default:
 }
 ```
 
-[aSimpleStatement](https://go101.org/article/expressions-and-statements.html#simple-statements)在type-switch中是可选的。<br>
+SimpleStmt在type-switch中是可选的。<br>
 
 i是一个接口类型的变量，v是i的断言结果，注意i.(type)，与i.(T)中的T可以改成具体类型不同，这里必须写成type, 如下例中的x.(type)。
 ```go
@@ -3612,7 +3168,7 @@ func main() {
 
 [**⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  P L A Y A R O U N D 📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️**](https://play.golang.org/p/1NYl6BGpQaK)
 
-## 8.6 接口嵌入
+## 7.6 接口嵌入
 
 一个接口类型里可以嵌入另一个接口类型，但接口类型不能嵌套多个具有相同方法名的接口类型，也不能自己嵌套自己  //adm
 
@@ -3759,13 +3315,13 @@ func main() {
 
 [**⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  P L A Y A R O U N D 📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️**](https://play.golang.org/p/CzUcp96U9HR)
 
-## 8.7 接口变量比较
+## 7.7 接口变量比较
 
 接口变量进行比较，结果相等的条件只有如下2个：<br>
 1. 2个接口变量的值均为nil<br>
 2. 2个接口变量具有相同的动态类型和动态值<br>
 
-将8.6中的main函数改成如下可以看到接口变量比较结果的例子  //adm
+将7.6中的main函数改成如下可以看到接口变量比较结果的例子  //adm
 
 ```go
 func main() {
@@ -3793,19 +3349,612 @@ func main() {
 
 [**⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  P L A Y A R O U N D 📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️  🧰  📟 ⚙️**](https://play.golang.org/p/U7_ncGQz_jS)
 
-# 9. 并发
+# 8.通道
+
+通过共享内存通信和通过通信来共享内存是2种不同的编程方式。通过共享内存通信需要使用互斥锁之类的同步方式来防止数据竞争，
+而通过通信来共享内存则可以通过通道channel的方式来实现，即通过channel(通道)来实现goroutine(并发)之间的共享内存。
+
+## 8.1 什么是通道
+通道(channel)的关键字为chan，可以把通道看作FIFO(first in first out)一样的数据队列。同slice，map一样，
+chan是Go语言的内置类型，使用时不需要导入包，但是像其他的同步方式（比如WaitGroup）则需要导入sync或sync/atomic包。
+chan有不同的类型，chan传输的数据类型要和chan的类型一致，假设T是chan的类型：<br><br>
+
+> 
+`chan T` &nbsp;&nbsp;表示一个双向通道，即可以往通道发送T类型的数据，也可以从通道读取T类型的数据。<br>
+`chan<- T`表示一个只能往通道发送T类型数据的单向通道。从此通道里读取数据会引起编译错误❌<br>
+`<-chan T`表示一个只能从通道读取T类型数据的单向通道。往此通道里发送数据会引起编译错误❌<br>
+
+`chan T`类型的通道值可以隐式的转换为`chan<- T`或`<-chan T`类型的值。<br>
+`chan<- T`和`<-chan T`类型的值不能转换为`chan T`类型的值;<br>
+`chan<- T`和`<-chan T`类型的值也不能互相转换。<br>
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+
+	//声明一个数据类型为int的双向通道变量bidirCh
+	var bidirCh chan int // or bidirCh := chan int(nil)
+
+	//声明一个数据类型为int的send only的单向通道变量sendOnlyCh
+	var sendOnlyCh chan<- int
+
+	//声明一个数据类型为int的receive only的单向通道变量receiveOnlyCh
+	var receiveOnlyCh <-chan int
+
+	fmt.Printf("bidirCh is nil? %t\n", bidirCh == nil)
+	fmt.Printf("bidirCh type is: %#v\n\n", bidirCh)
+
+	fmt.Printf("sendOnlyCh is nil? %t\n", sendOnlyCh == nil)
+	fmt.Printf("sendOnlyCh type is: %#v\n\n", sendOnlyCh)
+
+	fmt.Printf("receiveOnlyCh is nil? %t\n", receiveOnlyCh == nil)
+	fmt.Printf("receiveOnlyCh type is: %#v\n", receiveOnlyCh)
+
+	//chan int 型的双向通道的变量可以隐式的转换为chan<- int或<-chan int型的单向通道的变量
+	sendOnlyCh = bidirCh    //也可显式地转换:  sendOnlyCh := (chan<- int)(bidirCh)
+	receiveOnlyCh = bidirCh //也可显式地转换:  receiveOnlyCh := (<-chan int)(bidirCh)
+}
+```
+
+`bidirCh is nil? true`<br>
+`bidirCh type is: (chan int)(nil)`<br>
+
+`sendOnlyCh is nil? true`<br>
+`sendOnlyCh type is: (chan<- int)(nil)`<br>
+
+`receiveOnlyCh is nil? true`<br>
+`receiveOnlyCh type is: (<-chan int)(nil)`<br>
+
+[**🍏〰️🍎〰️🍐〰️🍊〰️🍋〰️🍌〰️🍉 P L A Y A R O U N D 〰️🍇〰️🍓〰️🍈〰️🍒〰️🍑〰️🥭 〰️🥝**]()
+
+## 8.2 创建通道
+
+8.1的例子中我们创建的3个通道bidirCh, sendOnlyCh和receiveOnlyCh的值均为nil，即系统为这3个声明的变量分配了地址，
+但变量内部的成员值还均为0值。我们可以用make()函数为这些通道分配缓存大小。<br>
+
+make(chan int, 10) //创建一个容量为10类型为int的通道<br>
+make(chan int, 0)  //创建一个容量为0类型为int的通道<br>
+
+make函数的第二个参数是可选的，默认是0，所以make(chan int, 0)也可以写成make(chan int)。容量为0的通道称为无缓冲的通道，否则称之为有缓冲的通道<br>
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+
+	//声明一个数据类型为int的双向通道变量bidirCh
+	var bidirCh chan int // or bidirCh := chan int(nil)
+
+	//声明一个数据类型为int的send only的单向通道变量sendOnlyCh
+	var sendOnlyCh chan<- int
+
+	//声明一个数据类型为int的receive only的单向通道变量receiveOnlyCh
+	var receiveOnlyCh <-chan int
+
+	//将bidircCh分配成一个无缓冲的双向通道
+	bidirCh = make(chan int, 0) //或者bidirCh = make(chan int)
+
+	//将sendOnlyCh分配成一个有20个整数缓冲的send only的通道
+	sendOnlyCh = make(chan<- int, 20)
+
+	//将receiveOnlyCh分配成一个有30个整数缓冲的receive only的通道
+	receiveOnlyCh = make(<-chan int, 30)
+
+	fmt.Printf("bidirCh is nil? %t\n", bidirCh == nil)
+	fmt.Printf("sendOnlyCh is nil? %t\n", sendOnlyCh == nil)
+	fmt.Printf("receiveOnlyCh is nil? %t\n\n", receiveOnlyCh == nil)
+
+	fmt.Printf("bidirCh len %d cap:%d\n", len(bidirCh), cap(bidirCh))
+	fmt.Printf("sendOnlyCh len %d cap:%d\n", len(sendOnlyCh), cap(sendOnlyCh))
+	fmt.Printf("receiveOnlyCh len %d cap:%d\n\n", len(receiveOnlyCh), cap(receiveOnlyCh))
+
+	//chan int 型的双向通道的变量可以隐式的转换为chan<- int或<-chan int型的单向通道的变量
+	sendOnlyCh = bidirCh    //也可显式地转换:  sendOnlyCh := (chan<- int)(bidirCh)
+	receiveOnlyCh = bidirCh //也可显式地转换:  receiveOnlyCh := (chan<- int)(bidirCh)
+
+	//注意: 这时的sendOnlyCh和receiveOnlyCh均是由bidirCh转换而来，它们的容量cap已变成bidirCh的容量。
+	fmt.Printf("sendOnlyCh len %d cap:%d\n", len(sendOnlyCh), cap(sendOnlyCh))
+	fmt.Printf("receiveOnlyCh len %d cap:%d\n", len(receiveOnlyCh), cap(receiveOnlyCh))
+}
+```
+
+`bidirCh is nil? false`<br>
+`sendOnlyCh is nil? false`<br>
+`receiveOnlyCh is nil? false`<br>
+
+`bidirCh len 0 cap:0`<br>
+`sendOnlyCh len 0 cap:20`<br>
+`receiveOnlyCh len 0 cap:30`<br>
+
+`sendOnlyCh len 0 cap:0`<br>
+`receiveOnlyCh len 0 cap:0`<br>
+
+[**🍏〰️🍎〰️🍐〰️🍊〰️🍋〰️🍌〰️🍉 P L A Y A R O U N D 〰️🍇〰️🍓〰️🍈〰️🍒〰️🍑〰️🥭 〰️🥝**]()
+
+## 8.3 发送/接收数据
+
+**对通道的标识符<-的说明:<br>**
+1. 把<-放在chan的左边或右边表示通道类型是发送还是接收，比如：<br>
+`var sch chan<- int`：<-指向通道，代表sch是一个send only通道类型的变量<br>
+`var rch <-chan int`:&nbsp;  <-源自通道，代表rch是一个receive only通道类型的变量<br>
+2. 把<-放在通道变量的左面或右面表示对通道进行接收或发送，比如：<br>
+`sch <- 5`: <-指向sch，表示将数组5发送到sch通道<br>
+`i <- sch`: <-源自sch，表示从sch通道里接收一个数字到变量i<br>
+
+下面的程序演示了从一个无缓冲的bidirCh通道发送并接收数据的过程，sender用来向bidirCh发送数据，
+receiver用来从bidirCh接收数据。由于bidirCh是无缓冲的通道，sender每发完一个数据后都会block
+在bidirCh端等待数据被receiver接收，receiver接收完数据后也会block在bidirCh端等待sender再次
+发送数据，依次循环，直到sender和receiver把切片s消耗完为止。<br>
+程序的第35行和38行分别用关键字go调用了sender和receiver的函数，这相当于在程序里起了一个“线程”，
+这里我们叫goroutine，main函数也是一个goroutine，我们称之为main goroutine。
+
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func sender(ch chan<- int, s []int) {
+	for _, v := range s {
+		//fmt.Println("\nsend block")
+		ch <- v
+		fmt.Printf("send %d\n", v)
+	}
+}
+
+func receiver(ch <-chan int) {
+	for {
+		//fmt.Println("\nrecv block")
+		v := <-ch
+		fmt.Printf("recv %d\n", v)
+	}
+}
+
+func main() {
+
+	//声明一个数据类型为int的双向通道变量bidirCh
+	var bidirCh chan int // or bidirCh := chan int(nil)
+
+	//为bidircCh分配一个无缓冲的双向通道
+	bidirCh = make(chan int, 0) //或者bidirCh = make(chan int)
+
+	s := []int{5, 4, 3, 2, 1, 0}
+
+	//启动sender的goroutine
+	go sender(bidirCh, s)
+
+	//启动receiver的goroutine
+	go receiver(bidirCh)
+
+	//让main goroutine 延迟5秒退出，以便等待sender和receiver的goroutine完成。
+	time.Sleep(time.Second * 5)
+}
+```
+`recv 5`<br>
+`send 5`<br>
+`send 4`<br>
+`recv 4`<br>
+`recv 3`<br>
+`send 3`<br>
+`send 2`<br>
+`recv 2`<br>
+`recv 1`<br>
+`send 1`<br>
+`send 0`<br>
+`recv 0`<br>
+
+send和recv对数字的发送与接收都是成对出现的，说明无缓冲的通道bidirCh具有同步的效果，
+在Go语言中无缓冲的通道也称作**同步通道**。<br>
+send和recv在处理不同的数字时它们出现的先后顺序不同，比如数字1，3，5是send在recv前，
+数字2，4是recv在send前，对于这种x事件和y事件发生顺序不固定的情况，我们就叫做并发。
+
+在打印中可以看到一些奇怪的现象，对于数字1，3，5的操作均是send在recv前，但是2和4的recv在send前。
+以recv2在send2之前为例，这并不是说sender还未发送数字2时receiver就已经接收到了数字2，而是因为在
+sender发送完数字1之后`ch <- v`会block住sender的goroutine，继而sender的goroutine从运行状态进入休眠状态，
+然后receiver的goroutine被唤醒并接收sender发送到通道的数字1，之后receiver的`v := <-ch`会block住receiver
+的goroutine，这个操作发生在sender发送2之前，在sender发送数字2之前receiver就已经block在通道的另一端准备好了接收的操作，
+
+[**🍏〰️🍎〰️🍐〰️🍊〰️🍋〰️🍌〰️🍉 P L A Y A R O U N D 〰️🍇〰️🍓〰️🍈〰️🍒〰️🍑〰️🥭 〰️🥝**]()
+
+## 8.4 关闭通道 
+
+假设通道变量为ch,关闭通道的操作为： close(ch), 使用close()函数需要注意以下几点：<br>
+
+1. close一个值为nil的通道会导致panic。<br>
+2. close一个已经close()的通道会导致panic异常。<br>
+3. 在向一个已经close()的通道发送数据时会导致panic。<br>
+4. close()不能关闭receive-only类型的通道。<br>
+8. 从一个已经close()的通道接收数据时会产生无尽的0值。<br>
+
+下例程序的注释标出了以上item1 ～ item4的4种错误操作，item5的无尽0值可以看下例程序的打印输出。<br>
+
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func sender(ch chan<- int, s []int) {
+
+	for _, v := range s {
+		//fmt.Println("\nsend block")
+		ch <- v
+		fmt.Printf("send %d\n", v)
+	}
+	close(ch)
+	//close(ch) //item2 ❌ panic: close of closed channel
+	//ch <- 99  //item3 ❌ panic: send on closed channel
+}
+
+func receiver(ch <-chan int) {
+	for {
+		//fmt.Println("\nrecv block")
+		//close(ch) //item4 ❌ invalid operation: close(ch) (cannot close receive-only channel)
+		v := <-ch
+		fmt.Printf("recv %d\n", v)
+	}
+}
+
+func main() {
+
+	//声明一个通道数据类型为int的双向通道bidirCh
+	var bidirCh chan int // or bidirCh := chan int(nil)
+
+	//close(bidirCh) //item1 ❌ panic: close of nil channel
+	//将bidircCh分配成一个无缓冲的双向通道
+	bidirCh = make(chan int, 0) //或者bidirCh = make(chan int)
+
+	s := []int{5, 4, 3, 2, 1, 0}
+
+	//启动sender的goroutine
+	go sender(bidirCh, s)
+
+	//启动receiver的goroutine
+	go receiver(bidirCh)
+
+	//让main goroutine 延迟5秒退出，以便等待sender和receiver的goroutine完成。
+	time.Sleep(time.Second * 5)
+}
+```
+
+`recv 5`<br>
+`send 5`<br>
+`send 4`<br>
+`recv 4`<br>
+`recv 3`<br>
+`send 3`<br>
+`send 2`<br>
+`recv 2`<br>
+`recv 1`<br>
+`send 1`<br>
+`send 0`<br>
+`recv 0`<br>
+`recv 0`<br>
+`recv 0`<br>
+`recv 0`<br>
+`recv 0`<br>
+`recv 0`<br>
+`... `<br>
+
+上面的打印出现了很多`recv 0`的打印，我们无法判断究竟哪一个是sender发送的那些是通道close()之后读出来的，
+下一节的例子会解决这个问题。
+
+[**🍏〰️🍎〰️🍐〰️🍊〰️🍋〰️🍌〰️🍉 P L A Y A R O U N D 〰️🍇〰️🍓〰️🍈〰️🍒〰️🍑〰️🥭 〰️🥝**](https://play.golang.org/p/kkGOj6tG-sJ)
+
+Go语言中的通道在使用完毕后不必非得使用close()函数来关闭通道，GC会自动检测并回收不再被引用的通道，
+那close()函数的作用是什么呢: close()可以通知通道的接收者在接收到某一个数据后后续再接收的数据将不再有效。<br>
+事实上从通道接收数据还有一个可选的bool变量，用于判断这个数据是否是从从通道里读取出来的，这样就能解决上面遇到的
+不确定哪个`recv 0` 是sender发送的问题。
+
+下面的例子里的接收者将判断从当前通道里读取数据如果不是true的话将终止接收通道的数据。
+
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func sender(ch chan<- int, s []int) {
+
+	for _, v := range s {
+		//fmt.Println("\nsend block")
+		ch <- v
+		fmt.Printf("send %d\n", v)
+	}
+	close(ch)
+	//close(ch) //item2 ❌ panic: close of closed channel
+	//ch <- 99  //item3 ❌ panic: send on closed channel
+}
+
+func receiver(ch <-chan int) {
+	for {
+		//fmt.Println("\nrecv block")
+		//close(ch) //item4 ❌ invalid operation: close(ch) (cannot close receive-only channel)
+		v, ok := <-ch
+		if ok == true {
+			fmt.Printf("recv %d %t\n", v, ok)
+		} else {
+			break
+		}
+	}
+}
+
+func main() {
+
+	//声明一个通道数据类型为int的双向通道bidirCh
+	var bidirCh chan int // or bidirCh := chan int(nil)
+
+	//close(bidirCh) //item1 ❌ panic: close of nil channel
+	//将bidircCh分配成一个无缓冲的双向通道
+	bidirCh = make(chan int, 0) //或者bidirCh = make(chan int)
+
+	s := []int{5, 4, 3, 2, 1, 0}
+
+	//启动sender的goroutine
+	go sender(bidirCh, s)
+
+	//启动receiver的goroutine
+	go receiver(bidirCh)
+
+	//让main goroutine 延迟5秒退出，以便等待sender和receiver的goroutine完成。
+	time.Sleep(time.Second * 5)
+}
+```
+
+`recv 5 true`<br>
+`send 5`<br>
+`send 4`<br>
+`recv 4 true`<br>
+`recv 3 true`<br>
+`send 3`<br>
+`send 2`<br>
+`recv 2 true`<br>
+`recv 1 true`<br>
+`send 1`<br>
+`send 0`<br>
+`recv 0 true`<br>
+
+使用close()函数并配合接收者对接收数据的true/false的判断，可以有效控制通过通道要发送或接收的数据。
+
+对于在本节刚开始提到的以下3种对通道的操作会导致panic的情况，都可以先从通道读取出一个数据并判断其
+是否为true的方式再执行以下3种close通道的方式，以避免产生panic:<br>
+1. close一个值为nil的通道会导致panic。<br>
+2. close一个已经close()的通道会导致panic异常。<br>
+3. 在向一个已经close()的通道发送数据时会导致panic。<br>
+
+[**🍏〰️🍎〰️🍐〰️🍊〰️🍋〰️🍌〰️🍉 P L A Y A R O U N D 〰️🍇〰️🍓〰️🍈〰️🍒〰️🍑〰️🥭 〰️🥝**](https://play.golang.org/p/kkGOj6tG-sJ)
+
+## 8.4 用通道替换time.Sleep
+
+在main函数结尾加一个`time.Sleep(time.Second * 5)`是为了调试sender和receiver的goroutine，但是正式编写程序时这个time.Sleep
+的延时不利于程序的快速🔜执行，所以我们可以往receiver的goroutine传入一个send only的done通道，之后main函数阻塞在done的一端
+读取数据。当receiver函数接收完ch通道的数据后，可以像done通道发送一个字符串，然后main函数就从done通道接收到了receiver写入
+的数据，整个程序结束。<br>
+这种goroutine像通道写入数据并由main goroutine读取的方法也适合解决go 启动goroutine无法取得返回值的问题。goroutine可以通过
+像一个通道写入想要返回🔙给main goroutine的数据并由main goroutine读取即可。
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func sender(ch chan<- int, s []int) {
+
+	for _, v := range s {
+		ch <- v
+		fmt.Printf("send %d\n", v)
+	}
+	close(ch)
+}
+
+func receiver(ch <-chan int, done chan<- string) {
+	for {
+		v, ok := <-ch
+		if ok == true {
+			fmt.Printf("recv %d %t\n", v, ok)
+		} else {
+			break
+		}
+	}
+	done <- "**********************************"
+}
+
+func main() {
+
+	var bidirCh chan int
+	done := make(chan string, 0)
+
+	bidirCh = make(chan int, 0)
+
+	s := []int{5, 4, 3, 2, 1, 0}
+
+	go sender(bidirCh, s)
+
+	go receiver(bidirCh, done)
+
+	//time.Sleep(time.Second * 5)
+	//Replace time.Sleep() statement with <-done and
+	//print the receiving string from done channel.
+	fmt.Println(<-done)
+}
+```
+
+`recv 5 true`<br>
+`send 5`<br>
+`send 4`<br>
+`recv 4 true`<br>
+`recv 3 true`<br>
+`send 3`<br>
+`send 2`<br>
+`recv 2 true`<br>
+`recv 1 true`<br>
+`send 1`<br>
+`send 0`<br>
+`recv 0 true`<br>
+`**********************************`<br>
+
+[**🍏〰️🍎〰️🍐〰️🍊〰️🍋〰️🍌〰️🍉 P L A Y A R O U N D 〰️🍇〰️🍓〰️🍈〰️🍒〰️🍑〰️🥭 〰️🥝**](https://play.golang.org/p/C3fkUTPXmRi)
+
+## 8.5 多个发送端
+
+## 8.5 一种能产生outofmemory的bug
+
+## 8.6 选取合适的channel缓存大小
 
 
-## 9.1. 什么是goroutine
+## 8.3 通道相关的操作
 
-Go语言中的并发主要是通过goroutine来实现，
-goroutine是一种超轻量的thread，goroutine由Go程序运行时(runtime)进行调度和维护，而系统thread是由操作系统进行调度和维护。
-一个goroutine需要由CPU附加到一个系统的thread上之后才能被执行。在同一时刻，一个goroutine只能附加到一个系统thread，同理
-一个系统thread在同一时刻也只能附加到一个goroutine上。当goroutine的时间片使用完毕后，goroutine会从当前的系统thread上分离，
-以便其他goroutine能附加到这个系统thread上并被执行。<br>
-假设用M代表系统的threads，P代表CPU的逻辑数量，G代表goroutine，上面描述的就是goroutine所用的[M-P-G模型](https://docs.google.com/document/d/1TTj4T2JO42uD5ID9e89oa0sLKhJYD0Y_kqxDv3I3XMw/edit)<br>
+通道的操作通常涉及：1. 创建，2. 写入数据，3. 获得通道长度和容量，4. 读取数据，8. 关闭通道。<br>
 
-Go程序中的main函数就是一个goroutine，如果要运行其他的gotoutine只需在调用的函数前面加上一个go关键字即可，如下示例:
+```go
+package main
+
+import "fmt"
+
+func main() {
+
+	s := make([]int, 10)
+
+	//1. 创建： 创建一个缓冲为5的通道ch
+	ch := make(chan int, 5)
+
+	fmt.Printf("len(ch):%2d  cap(ch):%2d\n", len(ch), cap(ch))//len(ch): 0  cap(ch): 5
+
+	//2. 写入： 往通道ch里发送数据
+	ch <- 1
+	ch <- 2
+	ch <- 3
+	ch <- 4
+	ch <- 5
+
+	//3.
+	// 长度
+	// 容量
+	fmt.Printf("len(ch):%2d  cap(ch):%2d\n", len(ch), cap(ch))//len(ch): 0  cap(ch): 5
+
+	//❌ ch <- 6 //通道已满(len(ch) == len(cap))，再像通道写入数据会产生错误：fatal error: all goroutines are asleep - deadlock!
+
+	//4. 读取
+	s[0] = <-ch
+	s[1] = <-ch
+	s[2] = <-ch
+	s[3] = <-ch
+	s[4] = <-ch
+
+	fmt.Printf("len(ch):%2d  cap(ch):%2d\n", len(ch), cap(ch))//len(ch): 0  cap(ch): 5
+
+	//❌ s[5] = <-ch //通道已空(len(ch) == 0)，再从通道读取数据会产生错误：fatal error: all goroutines are asleep - deadlock!
+
+	fmt.Println(s)
+
+	//8. 关闭
+	close(ch)
+}
+```
+
+`len(ch): 0  cap(ch): 5`<br>
+`len(ch): 5  cap(ch): 5`<br>
+`len(ch): 0  cap(ch): 5`<br>
+`[1 2 3 4 5 0 0 0 0 0]`<br>
+
+[**🍏〰️🍎〰️🍐〰️🍊〰️🍋〰️🍌〰️🍉 P L A Y A R O U N D 〰️🍇〰️🍓〰️🍈〰️🍒〰️🍑〰️🥭 〰️🥝**](https://play.golang.org/p/HCrPO1n5mlc)
+
+
+## 8.4 通道会崩溃的几种情况
+
+# 9. 并发与并行（parallelism）
+
+## 
+## 9.1. 并发（concurrency）
+
+Go语言中的并发主要是通过goroutine来实现，goroutine是一种超轻量的thread。
+Go语言的goroutine用的是[M-P-G模型](https://docs.google.com/document/d/1TTj4T2JO42uD5ID9e89oa0sLKhJYD0Y_kqxDv3I3XMw/edit):
+M代表系统thread， P代表逻辑CPU，G代表goroutine。<br>
+Go语言的运行时(runtime)会为每个物理CPU分配一个系统thread(下图中的M0)和一个逻辑CPU（下图中的P0），
+并将这个逻辑CPU绑定到系统thread上（下图中的P0被绑定到了M0上）。
+当有goroutine要运行的时候，运行时会将goroutine放到逻辑CPU（下图的P0）的等待队列中（下图中的G1, G2, G3, G4, G5）。
+同一时刻，一个逻辑CPU（下图的P0）只能处理一个goroutine（下图中的G0正运行在P0上），运行队列中的其他goroutine
+处于等待状态（下图中的G1, G2, G3, G4, G5处于等待队列），当当前goroutine(G0)的时间片用完后，
+当前goroutine(G0)进入等待队列，调度器会从等待队列中挑选一个最新的goroutine（G1）交给逻辑CPU(P0）来执行。
+
+```shell
+M0
+|
+|
+|
+P0 <----等-待-队-列----G1--G2--G3--G4--G5---<----
+|						|
+运						|
+|						|
+行						|
+|						|
+G0 ->----回-到-等-待-队-列-------->--------->----
+```
+
+当一个goroutine执行了一个阻塞的系统调用时(比如G0处于阻塞状态)，调度器会将G0绑定到M0上，M0、G0均与P0分离，
+调度器会为P0重新分配一个系统thead M1，并将P0绑定到M1上，此时P0会处理等待队列中的其他goroutine(比如G1)，
+待G0阻塞完毕后，G0会重新回到P0的等待队列中等待执行，M0会被系统保存好，以便后续使用。
+
+```shell
+M0
+|
+|
+|
+G0(阻塞状态)
+1. G0处于阻塞状态被绑定到M0上，M0、G0均与P0分离
+
+
+M1
+|
+|
+|
+P0 <----等-待-队-列----G2--G3--G4--G5-------<----
+|						|
+运						|
+|						|
+行						|
+|						|
+G1 ->----回-到-等-待-队-列-------->--------->----
+2. 调度器为G1重新分配了一个系统线程M1， P0执行等待队列中的其他goroutine
+
+
+M1
+|
+|
+|
+P0 <----等-待-队-列----G3--G4--G5--G1--G0---<----
+|						|
+运						|
+|						|
+行						|
+|						|
+G2 ->----回-到-等-待-队-列-------->--------->----
+3. G0阻塞完毕，重新回到P0的等待队列中
+
+
+M0
+|
+|
+|
+4. M0被系统保存，以便后续使用。
+```
+GO 1.5版本之后会为每个物理CPU分配一个逻辑CPU，1.5版本之前运行时只给Go的应用程序分配一个逻辑CPU，即使只有一个逻辑CPU，
+GO仍然可以以神奇的性能和效率，并发调度无数个goroutine。
+
+Go程序中的main函数就是一个goroutine，如果要启动其他的gotoutine只需在调用的函数前面加上一个go关键字即可，如下示例:
 
 goroutine简单示例  //adm
 
@@ -3908,7 +4057,775 @@ main函数从block状态恢复到running状态，然后再从running状态退出
 
 
 
-# 10. 总结
+
+# 10 控制流程
+
+除了break, continue, goto代码跳转语句, go还支持fallthrough。<br>
+除了if-else，2-6均可使用break跳出控制流。<br>
+2和3叫做循环控制流语句，我们可以使用continue提前结束当前的循环，以进入下一个循环。<br>
+
+## 10.1 if条件执行
+if语句的语法如下，if后面跟`SimpleStmt; Condition`。  SimpleStmt是Go中SimpleStatement的简称，SimpleStmt可以省略。Condition是布尔类型的表达式，不能省略。else语句也可以省略<br>
+if会根据Condition的结果来条件执行后面的语句块。如果Condition为true，则执行if分支的语句块; 如果Condition为false，则执行else语句块或后续的代码。<br>
+
+> 
+if SimpleStmt; Condition {<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;// do something<br>
+} else {<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;// do something<br>
+}<br>
+
+**SimpleStatement**
+
+Go中的SimpleStatement（简称SimpleStmt）分为以下6种情况：<br>
+1. 空语句。对，就是简单的什么都没有<br>
+2. 通道发送/接收操作。 比如 ch<-i或i<-ch <br>
+3. ++或--，加加或减减的操作。 比如 i++或i-- <br>
+4. 赋值语句。 比如 i = 1<br>
+5. 短变量声明。比如 i := 1<br>
+6. 表达式语句。比如 一元操作符(+ - ! ^ * & <-)相关的表达式，类型转换，断言，函数/方法的调用等<br>
+
+这里主要是为了展示if-else控制流的SimpleStmt的 6种情况，部分if语句的Condition直接使用了true的布尔值。<br>
+
+```go
+
+package main
+
+import "fmt"
+
+type myint int
+
+func myfunc(mi *myint) {
+	*mi = 3
+}
+
+func (mi *myint) mymethod() {
+	*mi = 4
+}
+
+func main() {
+	ch := make(chan int, 10)
+
+	if true {
+		fmt.Println("SimpleStmt1 空语句")
+	}
+
+	if ch <- 5; true {
+		fmt.Println("SimpleStmt2 通道发送 ch <- 5")
+	}
+
+	if _, ok := <-ch; ok {
+		fmt.Println("SimpleStmt2 通道接收 _, ok = <-ch", ok)
+	}
+
+	var ptr *int = new(int)
+	*ptr = 5
+	if *ptr++; true {
+		fmt.Println("SimpleStmt3 加加减减 *ptr++", *ptr)
+	}
+
+	if *ptr--; true {
+		fmt.Println("SimpleStmt3 加加减减 *ptr--", *ptr)
+	}
+
+	var i int
+	if i = 1; true {
+		fmt.Println("SimpleStmt4 赋值语句 i =", i)
+	}
+
+	if x := 1; true {
+		fmt.Println("SimpleStmt5 短变量声明 x := ", x)
+	}
+
+	var mi myint
+	if myfunc(&mi); mi > 0 {
+		fmt.Println("SimpleStmt6 函数调用 myfunc(&mi), mi", mi)
+	}
+
+	if (&mi).mymethod(); mi > 0 {
+		fmt.Println("SimpleStmt6 方法调用 (&mi).mymethod(), mi", mi)
+	}
+}
+```
+
+`SimpleStmt1 空语句`<br>
+`SimpleStmt2 通道发送 ch <- 5`<br>
+`SimpleStmt2 通道接收 _, ok = <-ch true`<br>
+`SimpleStmt3 加加减减 *ptr++ 6`<br>
+`SimpleStmt3 加加减减 *ptr-- 5`<br>
+`SimpleStmt4 赋值语句 i = 1`<br>
+`SimpleStmt5 短变量声明 x :=  1`<br>
+`SimpleStmt6 函数调用 myfunc(&mi), mi 3`<br>
+`SimpleStmt6 方法调用 (&mi).mymethod(), mi 4`<br>
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](https://play.golang.org/p/c_2sGJNDtyr)
+
+## 10.2 for循环执行
+
+for循环语句能够根据条件重复执行一个语句块，在Go语言中，for循环语句有3种形式：
+
+**形式一： for直接加Condition** <br>
+
+> for Condition {<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;// do something<br>
+}
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	var i int = 0
+
+	for i < 5 {
+		fmt.Println(i)
+		i++
+	}
+}
+```
+
+`0`<br>
+`1`<br>
+`2`<br>
+`3`<br>
+`4`<br>
+
+上例中`i < 5`相当于Condition。
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](https://play.golang.org/p/eaaUOkqtl37)<br><br>
+
+**形式二： for后面跟3个分句`InitStmt;Condition;PostStmt`，分句之间用`;`隔开** <br>
+
+
+> for InitStmt;Condition;PostStmt { <br>
+	&nbsp;&nbsp;&nbsp;&nbsp;// InitStmt可以是简短变量声明的形式，这样的话InitStmt<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;// 的有效范围仅在for循环体内，每次迭代时重复使用。<br>
+}
+
+InitStmt和PostStmt的格式就是SimpleStmt，只不过InitStmt在for循环开始时只执行一次，PostStmt是在每次for循环的语句块结束之后才执行一次。<br>
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	for i := 0; i < 5; i++ {
+		fmt.Println(i)
+	}
+}
+```
+
+`0`<br>
+`1`<br>
+`2`<br>
+`3`<br>
+`4`<br>
+
+上例中`i := 0`相当于InitStmt， `i < 5`相当于Condition, `i++`相当于PostStmt。
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](https://play.golang.org/p/PM68Sh_yN7K)<br><br>
+
+***
+**for后面的3个分句都可以省略，主要分为以下几种情况：**<br>
+
+for分句省略情况一: 如果省去InitStmt或PostStmt，需要保留与其相邻的`;`
+
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	var i int = 0
+	fmt.Println("Remove InitStmt")
+	for ; i < 5; i++ {
+		fmt.Println(i)
+	}
+}
+```
+
+`Remove InitStmt`<br>
+`0`<br>
+`1`<br>
+`2`<br>
+`3`<br>
+`4`<br>
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](https://play.golang.org/p/Wxa6Z8Tia9U)
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Remove PostStmt")
+	for i := 0; i < 5; {
+		fmt.Println(i)
+		i++
+	}
+}
+```
+
+`Remove PostStmt`<br>
+`0`<br>
+`1`<br>
+`2`<br>
+`3`<br>
+`4`<br>
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](https://play.golang.org/p/lJzwLN6Lsi2)<br><br>
+
+*** 
+<br>
+
+for分句省略情况二: 如果同时省去InitStmt和PostStmt, 则Condition前后的2个`;`可以保留也可以不保留。<br>
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	var i int = 0
+	fmt.Println("Remove InitStmt and PostStmt, reserve smeicolons")
+	for ; i < 5;  {
+		fmt.Println(i)
+		i++
+	}
+}
+```
+
+`Remove InitStmt and PostStmt, reserve smeicolons`<br>
+`0`<br>
+`1`<br>
+`2`<br>
+`3`<br>
+`4`<br>
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](https://play.golang.org/p/eZB_ffc9kWc)
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	var i int = 0
+	fmt.Println("Remove InitStmt and PostStmt, remove smeicolons")
+	for i < 5 {
+		fmt.Println(i)
+		i++
+	}
+}
+```
+
+`Remove InitStmt and PostStmt, remove smeicolons`<br>
+`0`<br>
+`1`<br>
+`2`<br>
+`3`<br>
+`4`<br>
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](https://play.golang.org/p/krr8TCD5pkq)<br><br>
+
+***
+<br>
+for分句省略情况三: 如果将Condition全部省去,则相当于一个无条件的for循环程序
+```go
+package main
+
+import "fmt"
+
+func main() {
+	for i := 0; ; i++ {
+		fmt.Println("Remove Condition")
+		fmt.Println(i)
+	}
+}
+```
+
+`Remove Condition`<br>
+`0`<br>
+`Remove Condition`<br>
+`1`<br>
+`Remove Condition`<br>
+`2`<br>
+`Remove Condition`<br>
+`3`<br>
+`...`<br>
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](https://play.golang.org/p/V4Pa36kfqXs)<br><br>
+
+*** 
+<br>
+for分句省略情况四: 如果将InitStmt;Condition;PostStmt全部省去,则相当于一个Condition为true的for循环程序。<br>
+以下2个程序是等价的, 它们均输出无尽的`Remove all for clauses`打印
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	for {
+		fmt.Println("Remove all for clauses")
+	}
+}
+```
+
+`Remove all for clauses`<br>
+`Remove all for clauses`<br>
+`Remove all for clauses`<br>
+`Remove all for clauses`<br>
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](https://play.golang.org/p/ghQ5YPTJGOw)<br>
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	for true {
+		fmt.Println("Remove all for clauses")
+	}
+}
+```
+
+`Remove all for clauses`<br>
+`Remove all for clauses`<br>
+`Remove all for clauses`<br>
+`Remove all for clauses`<br>
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](https://play.golang.org/p/y3e4qJT5Be-)
+
+**形式三： for-range语句, range右边的Expression代表array, slice, string, map或者chan类型变量的一种**
+
+>for IterationValueList := range Expression { <br>
+	&nbsp;&nbsp;&nbsp;&nbsp;// IterationValueList为短变量声明，每次迭代重复使用，<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;// 有效范围仅在for循环体内。<br>
+}<br>
+或
+<br>
+for IterationValueList = range Expression { <br>
+	&nbsp;&nbsp;&nbsp;&nbsp;// IterationValueList是在for循环外声明，每次迭代重复使用, <br>
+	&nbsp;&nbsp;&nbsp;&nbsp;// for循环结束后IterationValueList仍有效。<br> 
+}
+
+for-range 的IterationValueList在Expression为array, slice, string或map时，IterationValueList均有2个值，如下表的
+1st iteration value和2nd iteration value, 2nd iteration value是可以省略的。<br>
+Expression为chan时，IterationValueList只有1st iteration value这1个值，这个值不能省略，代表从ch中接收的元素值，具体情况见下表：
+
+| Expression | Expression Type | Expression Variable |    1st iteration value    |   2nd iteration value   |
+|------------|-----------------|---------------------|---------------------------|-------------------------|
+|    array   |  [...]T         |          a          |      int类型的索引值i     | 第i个数组元素a[i]       |
+|    slice   |     []T         |          s          |      int类型的索引值i     | 第i个切片元素s[i]       |
+|   string   |       T         |          str        |      int类型的索引值i     | 第i个rune类型的UTF-8字符|
+|      map   | map[K]V         |          m          |      K类型的键值k         | m[k]			           |
+|     chan   |  chan T         |          ch         |      T类型的元素值        |            🈚️           |
+
+下面的例子说明了for-range Expression对应的5种情况，并且还为每种Expression额外遍历了Expression Type为指针类型的变量。
+Expression Type为指针类型时，除了array类型的指针变量可以使用for-range进行遍历，其余4个类型均无法编译通过，因为这4个
+类型是复合数据类型，range无法找到复合数据类型里的元素值。
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	//------------------------------------------------------
+	fmt.Println("Expression: array")
+	a := [...]byte{'a', 'b', 'c', 'd', 'e'}
+	for i, v := range a {
+		fmt.Printf("a: %d %c\n", i, v)
+	}
+
+	fmt.Println("\nExpression: array pointer")
+	var pa *[len(a)]byte = &a
+	for i, v := range pa {
+		fmt.Printf("pa: %d %c\n", i, v)
+	}
+	//------------------------------------------------------
+
+	fmt.Println("\nExpression: slice")
+	s := []byte{'a', 'b', 'c', 'd', 'e'}
+
+	for i, v := range s {
+		fmt.Printf("s: %d %c\n", i, v)
+	}
+
+	//fmt.Println("\nExpression: slice pointer")
+	//var ps *[]byte = &s
+	//for i, v := range ps {
+	//	fmt.Printf("ps: %d %c\n", i, v)
+	//}
+	//------------------------------------------------------
+
+	fmt.Println("\nExpression: string")
+	str := "abcde"
+	for i, v := range str {
+		fmt.Printf("str: %d %c\n", i, v)
+	}
+
+	//fmt.Println("\nExpression: string pointer")
+	//var pstr *string = &str
+	//for i, v := range pstr {
+	//	fmt.Printf("pstr: %d %c\n", i, v)
+	//}
+	//------------------------------------------------------
+
+	fmt.Println("\nExpression: map")
+	m := map[int]byte{0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e'}
+	for k, v := range m {
+		fmt.Printf("m: %d %c\n", k, v)
+	}
+
+	//fmt.Println("\nExpression: string pointer")
+	//var pm *map[int]byte = &m
+	//for k, v := range pm {
+	//	fmt.Printf("pm: %d %c\n", k, v)
+	//}
+	//------------------------------------------------------
+
+	fmt.Println("\nExpression: chan")
+	ch := make(chan byte, 5)
+	ch <- 'a'
+	ch <- 'b'
+	ch <- 'c'
+	ch <- 'd'
+	ch <- 'e'
+	close(ch)
+
+	for ele := range ch {
+		fmt.Printf("ch: %c\n", ele)
+	}
+
+	//fmt.Println("\nExpression: chan pointer")
+	//ch = make(chan byte, 5)
+	//ch <- 'a'
+	//ch <- 'b'
+	//ch <- 'c'
+	//ch <- 'd'
+	//ch <- 'e'
+	//close(ch)
+
+	//var pch *chan byte = &ch
+	//for ele := range pch {
+	//	fmt.Printf("ch: %c\n", ele)
+	//}
+	//------------------------------------------------------
+}
+```
+
+`Expression: array`<br>
+`a: 0 a`<br>
+`a: 1 b`<br>
+`a: 2 c`<br>
+`a: 3 d`<br>
+`a: 4 e`<br>
+
+`Expression: array pointer`<br>
+`pa: 0 a`<br>
+`pa: 1 b`<br>
+`pa: 2 c`<br>
+`pa: 3 d`<br>
+`pa: 4 e`<br>
+
+`Expression: slice`<br>
+`s: 0 a`<br>
+`s: 1 b`<br>
+`s: 2 c`<br>
+`s: 3 d`<br>
+`s: 4 e`<br>
+
+`Expression: string`<br>
+`str: 0 a`<br>
+`str: 1 b`<br>
+`str: 2 c`<br>
+`str: 3 d`<br>
+`str: 4 e`<br>
+
+`Expression: map`<br>
+`m: 0 a`<br>
+`m: 1 b`<br>
+`m: 2 c`<br>
+`m: 3 d`<br>
+`m: 4 e`<br>
+
+`Expression: chan`<br>
+`ch: a`<br>
+`ch: b`<br>
+`ch: c`<br>
+`ch: d`<br>
+`ch: e`<br>
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](https://play.golang.org/p/ZxIAielzP4y)
+
+如果5种range Expression的变量均为0值，则:<br>
+1. array和array ptr是可以被for-range迭代的。<br>
+2. slice，string，map无法被for-range迭代。<br>
+3. chan的迭代会一直阻塞，使程序出现死锁。<br>
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	//------------------------------------------------------
+	var a [5]byte
+	fmt.Println("Expression: zero value array")
+	for i, v := range a {
+		fmt.Printf("a: %d %c\n", i, v)
+	}
+
+	var pa *[len(a)]byte = &a
+	fmt.Println("\nExpression: zero value array pointer")
+	for i, v := range pa {
+		fmt.Printf("pa: %d %c\n", i, v)
+	}
+	//------------------------------------------------------
+
+	var s []byte
+	fmt.Println("\nExpression: nil slice?", s == nil)
+
+	for i, v := range s {
+		fmt.Printf("s: %d %c\n", i, v)
+	}
+
+	//------------------------------------------------------
+
+	str := ""
+	fmt.Println("\nExpression: empty string?", str == "")
+	for i, v := range str {
+		fmt.Printf("str: %d %c\n", i, v)
+	}
+
+	//------------------------------------------------------
+
+	var m map[int]byte
+	fmt.Println("\nExpression: nil map?", m == nil)
+	for k, v := range m {
+		fmt.Printf("m: %d %c\n", k, v)
+	}
+
+	//------------------------------------------------------
+
+	var ch chan byte
+	fmt.Println("\nExpression: nil chan?", ch == nil)
+
+	for ele := range ch {
+		fmt.Printf("ch: %c\n", ele)
+	}
+
+	// or empty a channel directly
+	// for range ch {}
+	//------------------------------------------------------
+}
+```
+
+`Expression: zero value array`<br>
+`a: 0 `<br>
+`a: 1 `<br>
+`a: 2 `<br>
+`a: 3 `<br>
+`a: 4 `<br>
+
+`Expression: zero value array pointer`<br>
+`pa: 0 `<br>
+`pa: 1 `<br>
+`pa: 2 `<br>
+`pa: 3 `<br>
+`pa: 4 `<br>
+
+`Expression: nil slice? true`<br>
+
+`Expression: empty string? true`<br>
+
+`Expression: nil map? true`<br>
+
+`Expression: nil chan? true`<br>
+`fatal error: all goroutines are asleep - deadlock!`<br>
+
+`goroutine 1 [chan receive (nil chan)]:`<br>
+`main.main()`<br>
+`	/tmp/sandbox257575067/prog.go:38 +0x8c0`<br>
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](https://play.golang.org/p/PjoRzJxJfwy)
+
+***
+
+**for语句中有2个变量的示例**
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Println(" i", "    j")
+	for i, j := 0, 0; i <= 10 && j <= 20; i, j = i+1, j+2 {
+		fmt.Printf("%2d    %2d\n", i, j)
+	}
+}
+```
+
+` i     j`<br>
+` 0     0`<br>
+` 1     2`<br>
+` 2     4`<br>
+` 3     6`<br>
+` 4     8`<br>
+` 5    10`<br>
+` 6    12`<br>
+` 7    14`<br>
+` 8    16`<br>
+` 9    18`<br>
+`10    20`<br>
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](https://play.golang.org/p/5PE6Gj67HVl)
+
+## 10.3 switch多路执行
+switch-case语句有2种形式，第一种是值的比较，称作expression-switch（表达式switch）, 第二种是类型的比较, 称作type-switch(类型switch)。
+
+**expression-switch**
+
+跟在switch后面的表达式称作条件表达式。在expression-switch中，case表达式按照从左到右，从上至下的方向取值。
+当第一个case表达式与条件表达式相等时，这个case分支的语句将会被执行，其他的case值语句将会被跳过。条件表达式和case表达式需要是可比较的关系。
+switch里还有个default分支，当所有的case值都不等于switch的表达式值时，default分支的语句将会被执行。switch语句里只能有一个default分支，default
+分支可以放在switch语句里的任何位置。
+
+一个简单的expression-switch示例<br>
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+
+	switch i := 2; i {
+	case 1:
+		fmt.Println("1st case")
+	case 2:
+		fmt.Println("2nd case")
+	case 3:
+		fmt.Println("3rd case")
+	default:
+		fmt.Println("default")
+	}
+}
+```
+
+`2nd case`<br>
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](-)
+
+fallthrough会把switch语句中case或default的控制传递给下一条语句。注意fallthrough不能用在switch语句的最后一个分支。<br>
+
+一个简单的带fallthrough的expression-switch示例<br>
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+
+	switch i := 2; i {
+	case 1:
+		fmt.Println("1st case")
+	case 2:
+		fmt.Println("2nd case")
+		fallthrougth
+	case 3:
+		fmt.Println("3rd case")
+	default:
+		fmt.Println("default")
+	}
+}
+```
+
+`2nd case`<br>
+`3rd case`<br>
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](-)
+
+如果省去switch的条件表达式，同for循环省去所有分句一样，默认等于布尔值true。
+```go
+package main
+
+import "fmt"
+
+func main() {
+
+	switch {
+	case true:
+		fmt.Println("true")
+	case false:
+		fmt.Println("false")
+	default:
+		fmt.Println("default")
+	}
+}
+```
+
+`true`<br>
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](-)
+
+**type-switch**<br>
+type-switch比较的是变量的类型， 在switch语句的条件表达式中求的是变量的类型，case表达式中列的是各种已知的类型。<br>
+加入要用type-switch比较一个变量i的类型，switch语句的条件表达式须写成i.(type), 用于表示求i的类型。type关键字在这里是固定格式。
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+
+	type unknown int
+	var unk unknown
+
+	i := []interface{}{nil, true, 123, 1.23, "123", unk}
+
+	for _, v := range i {
+		switch v.(type) {
+		case nil:
+			fmt.Println("nil")
+		case bool:
+			fmt.Println("bool type, value:", v)
+		case int:
+			fmt.Println("int type, value:", v)
+		case float64:
+			fmt.Println("float64 type, value:", v)
+		case string:
+			fmt.Println("string type, value:", v)
+		default:
+			fmt.Println("unknown value type, value:", v)
+		}
+	}
+}
+```
+
+`nil`<br>
+`bool type, value: true`<br>
+`int type, value: 123`<br>
+`float64 type, value: 1.23`<br>
+`string type, value: 123`<br>
+`unknown value type, value: 0`<br>
+
+[**🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  P L A Y A R O U N D 🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣 ♻️  🦑 🐣**](-)
+
+## 10.4 select通道操作
+
+# 11. 总结
 
 ## 可以比较的类型
 以下5种类型在go语言中可以比较  //adm
@@ -3925,6 +4842,8 @@ main函数从block状态恢复到running状态，然后再从running状态退出
 5. 元素类型为不可比较的数组<br>
 
 [**🍣 🥨 🍒 🍣 🥨 🍒 🍣 🥨 🍒 🍣 🥨 P L A Y A R O U N D 🍒 🍣 🥨 🍒 🍣 🥨 🍒 🍣 🥨 🍒 🍣**](https://play.golang.org/p/_zbYO7zEAw5)
+
+## 无类型untyped
 
 ## 零值为nil的类型
 go语言中以下几种类型的0值用nil表示  //adm
@@ -3960,5 +4879,6 @@ addressable & unaddressable
 
 ## 参考资料
 https://go101.org <br>
+https://golang.org/ref/spec <br>
 https://tour.golang.org/methods/16 <br>
 https://golang.org/ref/spec#Method_sets <br>

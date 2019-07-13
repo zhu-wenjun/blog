@@ -1,7 +1,7 @@
 ---
 title: "Shall we talk?"
 date: 2019-05-08T18:07:55+08:00
-draft: true
+draft: false
 ---
 
 人有时候越长大就会摒弃以前小时候做的一些事情，比如写卡片这件事。<br>
