@@ -1,5 +1,5 @@
 ---
-title: "PIVX masternode"
+title: "PIVX 货币主节点搭建"
 date: 2019-01-17T12:45:33+08:00
 draft: false
 ---

@@ -1,5 +1,5 @@
 ---
-title: "Smartcash masternode"
+title: "Smartcash 货币主节点搭建"
 date: 2019-01-16T20:24:49+08:00
 draft: false
 ---
