@@ -1,5 +1,5 @@
 ---
-title: "宝宝配镜"
+title: "给宝宝配眼镜"
 date: 2019-08-14T17:43:48+08:00
 draft: false
 ---
@@ -9,10 +9,10 @@ draft: false
 宝宝第一天用阿托品的时候，因为对药品有反应，整个脸都是红的，别提当时多心疼了。散瞳期间，她连自己的辫绳都看不清，即使现在过了一个多月，
 她仍然怕见阳光，真不知道是不是有什么后续反应。
 <br><br><br><br>
-<img src="/glasses/1.JPG" style="transform:rotate(90deg);"><br><br><br>
-<img src="/glasses/2.JPG" style="transform:rotate(270deg);"><br><br><br>
+<img src="/glasses/1.JPG" style="transform:rotate(90deg);"><br><br> 
+<img src="/glasses/2.JPG" style="transform:rotate(270deg);"><br><br>
 
 今天又到了崇文门到同仁医院给宝宝配了眼镜，一共选了3款镜架，最终还是选中了这个黑色镜框圈的镜架。<br><br><br><br>
-<img src="/glasses/3.JPG" style="transform:rotate(90deg);"><br><br><br>
-<img src="/glasses/4.JPG" style="transform:rotate(90deg);"><br><br><br>
-<img src="/glasses/5.JPG" style="transform:rotate(90deg);"><br><br><br>
+<img src="/glasses/3.JPG" style="transform:rotate(90deg);"><br><br>
+<img src="/glasses/4.JPG" style="transform:rotate(90deg);"><br><br>
+<img src="/glasses/5.JPG" style="transform:rotate(90deg);"><br><br>
