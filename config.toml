@@ -44,7 +44,7 @@ preserveTaxonomyNames = true
     author = "Wenjun.Zhu"                           # Author's name
 avatar = "/me/zebra.jpeg"           # Author's avatar
 #avatar = "/me/avatar.jpeg"           # Author's avatar
-    subtitle = "多好玩的东西 早晚会放低"         # Subtitle
+    subtitle = "长路漫漫是如何走过"         # Subtitle
     cdn_url = ""           # Base CDN URL
     home_mode = "" # post or other
 
